@@ -63,11 +63,9 @@ def normalize_id(val) -> Optional[int]:
 
     return None
 
-# -------- Utilities --------
+
 def load_reviewer_ids(reviewers_path: Path) -> List[int]:
-    """
-    Load reviewer IDs from reviewers CSV (column 1). Robust to header and numeric formats.
-    """
+
     ids: List[int] = []
     with reviewers_path.open(newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
@@ -76,11 +74,11 @@ def load_reviewer_ids(reviewers_path: Path) -> List[int]:
                 continue
             raw = row[0]
             rid = normalize_id(raw)
-            # Skip header or non-numeric
+            
             if rid is None:
                 continue
             ids.append(rid)
-    # Deduplicate and keep stable order
+  
     seen = set()
     uniq = []
     for rid in ids:
@@ -90,12 +88,11 @@ def load_reviewer_ids(reviewers_path: Path) -> List[int]:
     return uniq
 
 def get_exclusion_cols(df: pd.DataFrame) -> List[str]:
-    """Return the exclusion column names that actually exist in the Applicants CSV."""
-    # Be tolerant of extra spaces/case by exact match first; you can extend to case-insensitive if needed.
+
     return [c for c in EXCLUSION_COL_CANDIDATES if c in df.columns]
 
 def build_exclusion_set(row: pd.Series, exclusion_cols: List[str]) -> Set[int]:
-    """Build a set of normalized reviewer IDs listed for this application (to be excluded)."""
+    
     excluded: Set[int] = set()
     for col in exclusion_cols:
         val = row.get(col)
@@ -105,12 +102,12 @@ def build_exclusion_set(row: pd.Series, exclusion_cols: List[str]) -> Set[int]:
     return excluded
 
 def choose_reviewers(eligible_pool: List[int], k: int) -> List[int]:
-    """Randomly choose up to k distinct reviewers from the eligible pool."""
+    
     if len(eligible_pool) <= k:
         return random.sample(eligible_pool, len(eligible_pool)) if eligible_pool else []
     return random.sample(eligible_pool, k)
 
-# -------- Main allocation --------
+
 def main():
     if SEED is not None:
         random.seed(SEED)
@@ -118,7 +115,7 @@ def main():
     applicants_path = Path(APPLICANTS_FILE)
     reviewers_path  = Path(REVIEWERS_FILE)
 
-    # Load data
+  
     df = pd.read_csv(applicants_path)
     if "Application ID" not in df.columns:
         raise ValueError("Applicants CSV must contain an 'Application ID' column.")
@@ -131,8 +128,8 @@ def main():
     if not reviewer_ids:
         raise ValueError("No reviewer IDs found in reviewers CSV.")
 
-    global_reviewers = reviewer_ids[:]  # already normalized ints
-    # Optionally shuffle for randomness
+    global_reviewers = reviewer_ids[:]  
+   
     random.shuffle(global_reviewers)
 
     output_rows: List[Dict[str, object]] = []
@@ -142,7 +139,7 @@ def main():
         app_id = row.get("Application ID")
 
         excluded = build_exclusion_set(row, exclusion_cols)
-        # Eligible = all reviewers minus excluded (types are consistent ints)
+   
         eligible = [rid for rid in global_reviewers if rid not in excluded]
 
         picks = choose_reviewers(eligible, ASSIGNMENTS_PER_APPLICATION)
@@ -153,7 +150,7 @@ def main():
                 f"(needed {ASSIGNMENTS_PER_APPLICATION})."
             )
 
-        # Final safety check: no overlap
+       
         if set(picks) & excluded:
             raise RuntimeError(
                 f"Conflict detected for Application {app_id}: assigned excluded reviewers {set(picks) & excluded}"
