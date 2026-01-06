@@ -9,33 +9,24 @@ from typing import List, Set, Dict, Optional
 
 import pandas as pd
 
-os.chdir ("C://Users/ls13g17/OneDrive - University of Southampton/Documents/CaSDaR/Funding call")
+
 
 APPLICANTS_FILE = "20260101_Applicants_v2.csv"
 REVIEWERS_FILE  = "20260101_reviewers_v1.csv"
 OUTPUT_FILE     = "20260101_random_allocation_no_conflicts.csv"
 
-ASSIGNMENTS_PER_APPLICATION = 3   # reviewers per application
-SEED = 42                         # set to None for non-deterministic randomness
+ASSIGNMENTS_PER_APPLICATION = 3  
+SEED = 42                         
 
-# Columns in Applicants that list reviewers to EXCLUDE for that application
+
 EXCLUSION_COL_CANDIDATES = [
     "Reviewer 1", "Reviewer 2", "Reviewer 3"]
 
-# -------- Robust ID normalizer --------
+
 ID_PATTERN_INT_OR_FLOAT = re.compile(r"^\s*(\d+)(?:\.0+)?\s*$", re.IGNORECASE)
 
 def normalize_id(val) -> Optional[int]:
-    """
-    Convert a cell value into an integer ID if it is effectively an integer.
-    Handles:
-      - int / float (e.g., 138590 or 138590.0)
-      - digit strings ("138590")
-      - digit-with-decimal-zero strings ("138590.0")
-      - scientific notation ("1.3859E+05") -> 138590 if integral
-      - strings with commas ("138,590")
-    Returns None if it can't be safely interpreted as an integer ID.
-    """
+
     if val is None or (isinstance(val, float) and math.isnan(val)):
         return None
 
