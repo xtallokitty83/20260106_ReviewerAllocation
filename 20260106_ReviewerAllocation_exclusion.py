@@ -30,30 +30,30 @@ def normalize_id(val) -> Optional[int]:
     if val is None or (isinstance(val, float) and math.isnan(val)):
         return None
 
-    # Already an int
+ 
     if isinstance(val, int):
         return int(val)
 
-    # Float that is integral
+
     if isinstance(val, float):
         if val.is_integer():
             return int(val)
-        return None  # non-integer floats are not valid IDs
+        return None 
 
-    # String-like
+ 
     s = str(val).strip()
     if not s:
         return None
 
-    # Remove thousands separators
+ 
     s_no_commas = s.replace(",", "")
 
-    # Try plain int or 'int with .0'
+   
     m = ID_PATTERN_INT_OR_FLOAT.match(s_no_commas)
     if m:
         return int(m.group(1))
 
-    # Try scientific notation -> float -> int if integral
+  
     try:
         f = float(s_no_commas)
         if f.is_integer():
